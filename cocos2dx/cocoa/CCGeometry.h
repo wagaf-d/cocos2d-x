@@ -52,6 +52,8 @@ public:
     CCPoint operator/(float a) const;
     void setPoint(float x, float y);
     bool equals(const CCPoint& target) const;
+    float length() const;
+    float lengthSq() const;
 };
 
 class CC_DLL CCSize

@@ -190,20 +190,20 @@ CCObject* CCDictionary::objectForKey(intptr_t key)
 const CCString* CCDictionary::valueForKey(const std::string& key)
 {
     CCString* pStr = dynamic_cast<CCString*>(objectForKey(key));
-    if (pStr == NULL)
+    /*if (pStr == NULL)
     {
         pStr = CCString::create("");
-    }
+    }*/
     return pStr;
 }
 
 const CCString* CCDictionary::valueForKey(intptr_t key)
 {
     CCString* pStr = dynamic_cast<CCString*>(objectForKey(key));
-    if (pStr == NULL)
+    /*if (pStr == NULL)
     {
         pStr = CCString::create("");
-    }
+    }*/
     return pStr;
 }
 

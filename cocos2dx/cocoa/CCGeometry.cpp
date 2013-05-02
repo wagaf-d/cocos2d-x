@@ -93,6 +93,17 @@ bool CCPoint::equals(const CCPoint& target) const
         && (fabs(this->y - target.y) < FLT_EPSILON);
 }
 
+float CCPoint::length() const
+{
+	return hypotf(x, y);
+}
+
+float CCPoint::lengthSq() const
+{
+	return x*x + y*y;
+}
+
+
 // implementation of CCSize
 
 CCSize::CCSize(void)
