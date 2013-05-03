@@ -22,8 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 
-#ifndef __CCGEMETRY_H__
-#define __CCGEMETRY_H__
+#ifndef __CCGEOMETRY_H__
+#define __CCGEOMETRY_H__
 
 #include "platform/CCPlatformMacros.h"
 #include "CCObject.h"
@@ -122,4 +122,4 @@ const CCRect CCRectZero = CCRectMake(0,0,0,0);
 
 NS_CC_END
 
-#endif // __CCGEMETRY_H__
+#endif // __CCGEOMETRY_H__
