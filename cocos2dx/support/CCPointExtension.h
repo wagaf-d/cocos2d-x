@@ -66,7 +66,7 @@ NS_CC_BEGIN
 static inline CCPoint
 ccpNeg(const CCPoint& v)
 {
-    return ccp(-v.x, -v.y);
+    return -v;
 }
 
 /** Calculates sum of two points.
@@ -76,7 +76,7 @@ ccpNeg(const CCPoint& v)
 static inline CCPoint
 ccpAdd(const CCPoint& v1, const CCPoint& v2)
 {
-    return ccp(v1.x + v2.x, v1.y + v2.y);
+    return v1 + v2;
 }
 
 /** Calculates difference of two points.
@@ -86,7 +86,7 @@ ccpAdd(const CCPoint& v1, const CCPoint& v2)
 static inline CCPoint
 ccpSub(const CCPoint& v1, const CCPoint& v2)
 {
-    return ccp(v1.x - v2.x, v1.y - v2.y);
+    return v1 - v2;
 }
 
 /** Returns point multiplied by given factor.
@@ -96,7 +96,7 @@ ccpSub(const CCPoint& v1, const CCPoint& v2)
 static inline CCPoint
 ccpMult(const CCPoint& v, const float s)
 {
-    return ccp(v.x*s, v.y*s);
+    return v * s;
 }
 
 /** Calculates midpoint between two points.
