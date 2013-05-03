@@ -22,8 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 
-#ifndef __CCGEMETRY_H__
-#define __CCGEMETRY_H__
+#ifndef __CCGEOMETRY_H__
+#define __CCGEOMETRY_H__
 
 #include "platform/CCPlatformMacros.h"
 #include "CCObject.h"
@@ -49,11 +49,16 @@ public:
     CCPoint(float x, float y);
     CCPoint(const CCPoint& other);
     CCPoint(const CCSize& size);
-    CCPoint& operator= (const CCPoint& other);
-    CCPoint& operator= (const CCSize& size);
+    CCPoint& operator=(const CCPoint& other);
+    CCPoint& operator=(const CCSize& size);
+	CCPoint& operator+=(const CCPoint& right);
     CCPoint operator+(const CCPoint& right) const;
+	CCPoint& operator-=(const CCPoint& right);
     CCPoint operator-(const CCPoint& right) const;
+	CCPoint operator-() const;
+	CCPoint& operator*=(float a);
     CCPoint operator*(float a) const;
+	CCPoint& operator/=(float a);
     CCPoint operator/(float a) const;
     void setPoint(float x, float y);
     bool equals(const CCPoint& target) const;
@@ -122,4 +127,4 @@ const CCRect CCRectZero = CCRectMake(0,0,0,0);
 
 NS_CC_END
 
-#endif // __CCGEMETRY_H__
+#endif // __CCGEOMETRY_H__
