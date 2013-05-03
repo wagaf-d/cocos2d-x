@@ -64,7 +64,7 @@ CCPoint& CCPoint::operator+=(const CCPoint& right)
 
 CCPoint CCPoint::operator+(const CCPoint& right) const
 {
-    return CCPoint(this->x + right.x, this->y + right.y);
+     return CCPoint(*this) += right;
 }
 
 CCPoint& CCPoint::operator-=(const CCPoint& right)
@@ -75,7 +75,7 @@ CCPoint& CCPoint::operator-=(const CCPoint& right)
 
 CCPoint CCPoint::operator-(const CCPoint& right) const
 {
-    return CCPoint(this->x - right.x, this->y - right.y);
+    return CCPoint(*this) -= right;
 }
 
 CCPoint CCPoint::operator-() const
@@ -91,12 +91,18 @@ CCPoint& CCPoint::operator*=(float a)
 
 CCPoint CCPoint::operator*(float a) const
 {
-    return CCPoint(this->x * a, this->y * a);
+    return CCPoint(*this) *= a;
+}
+
+CCPoint& CCPoint::operator/=(float a)
+{
+	setPoint(this->x / a, this->y / a);
+	return *this;
 }
 
 CCPoint CCPoint::operator/(float a) const
 {
-    return CCPoint(this->x / a, this->y / a);
+    return CCPoint(*this) /= a;
 }
 
 void CCPoint::setPoint(float x, float y)
