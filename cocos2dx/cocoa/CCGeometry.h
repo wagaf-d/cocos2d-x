@@ -27,6 +27,7 @@ THE SOFTWARE.
 
 #include "platform/CCPlatformMacros.h"
 #include "CCObject.h"
+#include <math.h>
 
 NS_CC_BEGIN
 
@@ -34,6 +35,9 @@ NS_CC_BEGIN
  * @addtogroup data_structures
  * @{
  */
+
+// for CCPoint assignement operator and copy constructor
+class CC_DLL CCSize;
 
 class CC_DLL CCPoint
 {
@@ -45,15 +49,82 @@ public:
     CCPoint();
     CCPoint(float x, float y);
     CCPoint(const CCPoint& other);
+    CCPoint(const CCSize& size);
     CCPoint& operator= (const CCPoint& other);
+    CCPoint& operator= (const CCSize& size);
     CCPoint operator+(const CCPoint& right) const;
     CCPoint operator-(const CCPoint& right) const;
+    CCPoint operator-() const;
     CCPoint operator*(float a) const;
     CCPoint operator/(float a) const;
     void setPoint(float x, float y);
     bool equals(const CCPoint& target) const;
-    float length() const;
-    float lengthSq() const;
+    bool fuzzyEquals(const CCPoint& target, float variance) const;
+
+    inline float getLength() const {
+        return sqrtf(x*x + y*y);
+    };
+
+    inline float getLengthSq() const {
+        return dot(*this); //x*x + y*y;
+    };
+
+    inline float getAngle() const {
+        return atan2f(y, x);
+    };
+
+    inline float getDistanceSq(const CCPoint& other) const {
+        return (*this - other).getLengthSq();
+    };
+
+    inline float getDistance(const CCPoint& other) const {
+        return (*this - other).getLength();
+    };
+
+    float getAngle(const CCPoint& other) const;
+
+    inline float dot(const CCPoint& other) const {
+        return x*other.x + y*other.y;
+    };
+
+    inline float cross(const CCPoint& other) const {
+        return x*other.y - y*other.x;
+    };
+
+    inline CCPoint getPerp() const {
+        return CCPoint(-y, x);
+    };
+
+    inline CCPoint getRPerp() const {
+        return CCPoint(y, -x);
+    };
+
+    inline CCPoint project(const CCPoint& other) const {
+        return other * (dot(other)/other.dot(other));
+    };
+
+    inline CCPoint rotate(const CCPoint& other) const {
+        return CCPoint(x*other.x - y*other.y, x*other.y + y*other.x);
+    };
+
+    inline CCPoint unrotate(const CCPoint& other) const {
+        return CCPoint(x*other.x + y*other.y, y*other.x - x*other.y);
+    };
+
+    inline CCPoint normalize() const {
+        return *this / getLength();
+    };
+
+    inline CCPoint lerp(const CCPoint& other, float alpha) const {
+        return *this * (1.f - alpha) + other * alpha;
+    };
+
+    CCPoint rotateByAngle(const CCPoint& pivot, float angle) const;
+
+    static inline CCPoint forAngle(const float a)
+    {
+    	return CCPoint(cosf(a), sinf(a));
+    }
 };
 
 class CC_DLL CCSize
@@ -66,7 +137,13 @@ public:
     CCSize();
     CCSize(float width, float height);
     CCSize(const CCSize& other);
+    CCSize(const CCPoint& point);
     CCSize& operator= (const CCSize& other);
+    CCSize& operator= (const CCPoint& point);
+    CCSize operator+(const CCSize& right) const;
+    CCSize operator-(const CCSize& right) const;
+    CCSize operator*(float a) const;
+    CCSize operator/(float a) const;
     void setSize(float width, float height);
     bool equals(const CCSize& target) const;
 };
@@ -78,10 +155,10 @@ public:
     CCSize  size;
 
 public:
-    CCRect();    
+    CCRect();
     CCRect(float x, float y, float width, float height);
     CCRect(const CCRect& other);
-    CCRect& operator= (const CCRect& other); 
+    CCRect& operator= (const CCRect& other);
     void setRect(float x, float y, float width, float height);
     float getMinX() const; /// return the leftmost x-value of current rect
     float getMidX() const; /// return the midpoint x-value of current rect
