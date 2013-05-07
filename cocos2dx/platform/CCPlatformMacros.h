@@ -233,6 +233,19 @@ public: virtual void set##funName(varType var)   \
 #define LUALOG(format, ...)     cocos2d::CCLog(format, ##__VA_ARGS__)
 #endif // Lua engine debug
 
+#if defined(__GNUC__) && ((__GNUC__ >= 5) || ((__GNUG__ == 4) && (__GNUC_MINOR__ >= 4))) \
+    || (defined(__clang__) && (__clang_major__ >= 3))
+#define CC_DISABLE_COPY(Class) \
+private: \
+    Class(const Class &) = delete; \
+    Class &operator =(const Class &) = delete;
+#else
+#define CC_DISABLE_COPY(Class) \
+private: \
+    Class(const Class &); \
+    Class &operator =(const Class &);
+#endif
+
 /*
  * only certain compilers support __attribute__((deprecated))
  */
@@ -243,6 +256,27 @@ public: virtual void set##funName(varType var)   \
 #else
     #define CC_DEPRECATED_ATTRIBUTE
 #endif 
+
+/*
+ * only certain compiler support __attribute__((format))
+ * formatPos - 1-based position of format string argument
+ * argPos - 1-based position of first format-dependent argument
+ */
+#if defined(__GNUC__) && (__GNUC__ >= 4)
+#define CC_FORMAT_PRINTF(formatPos, argPos) __attribute__((__format__(printf, formatPos, argPos)))
+#elif defined(__has_attribute)
+  #if __has_attribute(format)
+  #define CC_FORMAT_PRINTF(formatPos, argPos) __attribute__((__format__(printf, formatPos, argPos)))
+  #endif // __has_attribute(format)
+#else
+#define CC_FORMAT_PRINTF(formatPos, argPos)
+#endif
+
+#if defined(_MSC_VER)
+#define CC_FORMAT_PRINTF_SIZE_T "%08lX"
+#else
+#define CC_FORMAT_PRINTF_SIZE_T "%08zX"
+#endif
 
 #ifdef __GNUC__
 #define CC_UNUSED __attribute__ ((unused))
