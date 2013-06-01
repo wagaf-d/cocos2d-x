@@ -20,7 +20,6 @@ EXTENSIONS_SOURCES = ../CCBReader/CCBFileLoader.cpp \
 ../CCBReader/CCBSequence.cpp \
 ../CCBReader/CCBSequenceProperty.cpp \
 ../CCBReader/CCBValue.cpp \
-../CCBReader/CCData.cpp \
 ../CCBReader/CCNode+CCBRelativePositioning.cpp \
 ../GUI/CCScrollView/CCScrollView.cpp \
 ../GUI/CCScrollView/CCSorting.cpp \
@@ -38,6 +37,8 @@ EXTENSIONS_SOURCES = ../CCBReader/CCBFileLoader.cpp \
 ../GUI/CCControlExtension/CCScale9Sprite.cpp \
 ../GUI/CCControlExtension/CCControlPotentiometer.cpp \
 ../GUI/CCControlExtension/CCControlStepper.cpp \
+../GUI/CCEditBox/CCEditBox.cpp \
+../GUI/CCEditBox/CCEditBoxImplNone.cpp \
 ../physics_nodes/CCPhysicsDebugNode.cpp \
 ../physics_nodes/CCPhysicsSprite.cpp \
 ../spine/Animation.cpp \

@@ -86,6 +86,7 @@ CCNode::CCNode(void)
 , m_bVisible(true)
 , m_bIgnoreAnchorPointForPosition(false)
 , m_bReorderChildDirty(false)
+, m_bIsTransitionFinished(false)
 , m_nScriptHandler(0)
 , m_nUpdateScriptHandler(0)
 {
@@ -326,7 +327,7 @@ CCArray* CCNode::getChildren()
     return m_pChildren;
 }
 
-unsigned int CCNode::getChildrenCount(void)
+unsigned int CCNode::getChildrenCount(void) const
 {
     return m_pChildren ? m_pChildren->count() : 0;
 }
@@ -392,7 +393,7 @@ void CCNode::setAnchorPoint(const CCPoint& point)
 }
 
 /// contentSize getter
-const CCSize& CCNode::getContentSize()
+const CCSize& CCNode::getContentSize() const
 {
     return m_obContentSize;
 }
@@ -441,7 +442,7 @@ void CCNode::ignoreAnchorPointForPosition(bool newValue)
 }
 
 /// tag getter
-int CCNode::getTag()
+int CCNode::getTag() const
 {
     return m_nTag;
 }
@@ -597,7 +598,10 @@ void CCNode::addChild(CCNode *child, int zOrder, int tag)
     if( m_bRunning )
     {
         child->onEnter();
-        child->onEnterTransitionDidFinish();
+        // prevent onEnterTransitionDidFinish to be called twice when a node is added in onEnter
+        if (m_bIsTransitionFinished) {
+            child->onEnterTransitionDidFinish();
+        }
     }
 }
 
@@ -895,6 +899,8 @@ void CCNode::transform()
 
 void CCNode::onEnter()
 {
+    m_bIsTransitionFinished = false;
+
     arrayMakeObjectsPerformSelector(m_pChildren, onEnter, CCNode*);
 
     this->resumeSchedulerAndActions();
@@ -909,6 +915,8 @@ void CCNode::onEnter()
 
 void CCNode::onEnterTransitionDidFinish()
 {
+    m_bIsTransitionFinished = true;
+
     arrayMakeObjectsPerformSelector(m_pChildren, onEnterTransitionDidFinish, CCNode*);
 
     if (m_eScriptType == kScriptTypeJavascript)
