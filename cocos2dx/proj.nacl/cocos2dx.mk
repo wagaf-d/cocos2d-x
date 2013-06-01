@@ -9,8 +9,10 @@ NACL_ARCH ?= x86_64
 NACL_AR ?= $(NACL_ARCH)-nacl-ar
 NACL_CC ?= $(NACL_ARCH)-nacl-gcc
 NACL_CXX ?= $(NACL_ARCH)-nacl-g++
-CCFLAGS += -Wall -Werror
-CXXFLAGS += -Wall -Werror
+CCFLAGS += -Wall
+# -Werror
+CXXFLAGS += -Wall
+# -Werror
 ARFLAGS = cr
 
 THIS_MAKEFILE := $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
@@ -54,7 +56,7 @@ INCLUDES += -I$(COCOS_SRC) \
 ifeq ($(DEBUG), 1)
 BIN_DIR = bin/debug
 CCFLAGS += -g3 -O0
-CXXFLAGS += -g3 -O0
+CXXFLAGS += -g3 -O0 -std=C++0x
 LIB_DIR := $(LIB_DIR)/Debug
 OBJ_DIR := $(OBJ_DIR)/Debug
 MULTILIB_SUFFIX := $(ARCH_DIR)/Debug
@@ -88,7 +90,7 @@ CXXFLAGS += -Wno-unknown-pragmas
 
 ifeq ($(NACL_ARCH),arm)
 # Don't warn about mangling of 'va_list' on arm builds
-CCFLAGS += -Wno-psabi
+#CCFLAGS += -Wno-psabi
 CXXFLAGS += -Wno-psabi
 endif
 
