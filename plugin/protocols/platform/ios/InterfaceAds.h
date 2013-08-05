@@ -27,10 +27,12 @@ THE SOFTWARE.
 @protocol InterfaceAds <NSObject>
 
 - (void) configDeveloperInfo: (NSMutableDictionary*) devInfo;
-- (void) showAds: (int) type size:(int) sizeEnum position:(int) pos;
-- (void) hideAds: (NSNumber*) type;
-- (void) spendPoints: (NSNumber*) points;
-- (void) setDebugMode: (NSNumber*) debug;
+- (void) showAds: (NSMutableDictionary*) info position:(int) pos;
+- (void) hideAds: (NSMutableDictionary*) info;
+- (void) queryPoints;
+- (void) spendPoints: (int) points;
+- (void) setDebugMode: (BOOL) debug;
 - (NSString*) getSDKVersion;
+- (NSString*) getPluginVersion;
 
 @end

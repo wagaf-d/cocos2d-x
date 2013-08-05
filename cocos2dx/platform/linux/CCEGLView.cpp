@@ -1,5 +1,5 @@
 /*
- * CCEGLViewlinux.cpp
+ * EGLViewlinux.cpp
  *
  *  Created on: Aug 8, 2011
  *      Author: laschweinski
@@ -7,294 +7,264 @@
 
 #include "CCEGLView.h"
 #include "CCGL.h"
-#include "GL/glfw.h"
 #include "ccMacros.h"
 #include "CCDirector.h"
 #include "touch_dispatcher/CCTouch.h"
 #include "touch_dispatcher/CCTouchDispatcher.h"
 #include "text_input_node/CCIMEDispatcher.h"
+#include "keyboard_dispatcher/CCKeyboardDispatcher.h"
+#include <unistd.h>
 
-PFNGLGENFRAMEBUFFERSEXTPROC glGenFramebuffersEXT = NULL;
-PFNGLDELETEFRAMEBUFFERSEXTPROC glDeleteFramebuffersEXT = NULL;
-PFNGLBINDFRAMEBUFFEREXTPROC glBindFramebufferEXT = NULL;
-PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC glCheckFramebufferStatusEXT = NULL;
-PFNGLFRAMEBUFFERTEXTURE2DEXTPROC glFramebufferTexture2DEXT = NULL;
-PFNGLGENERATEMIPMAPEXTPROC glGenerateMipmapEXT = NULL;
-
-PFNGLGENBUFFERSARBPROC glGenBuffersARB = NULL;
-PFNGLBINDBUFFERARBPROC glBindBufferARB = NULL;
-PFNGLBUFFERDATAARBPROC glBufferDataARB = NULL;
-PFNGLBUFFERSUBDATAARBPROC glBufferSubDataARB = NULL;
-PFNGLDELETEBUFFERSARBPROC glDeleteBuffersARB = NULL;
-
-bool initExtensions() {
-#define LOAD_EXTENSION_FUNCTION(TYPE, FN)  FN = (TYPE)glfwGetProcAddress(#FN);
-	bool bRet = false;
-	do {
-
-//		char* p = (char*) glGetString(GL_EXTENSIONS);
-//		printf(p);
-
-		/* Supports frame buffer? */
-		if (glfwExtensionSupported("GL_EXT_framebuffer_object") != GL_FALSE)
-		{
-
-			/* Loads frame buffer extension functions */
-			LOAD_EXTENSION_FUNCTION(PFNGLGENERATEMIPMAPEXTPROC,
-					glGenerateMipmapEXT);
-			LOAD_EXTENSION_FUNCTION(PFNGLGENFRAMEBUFFERSEXTPROC,
-					glGenFramebuffersEXT);
-			LOAD_EXTENSION_FUNCTION(PFNGLDELETEFRAMEBUFFERSEXTPROC,
-					glDeleteFramebuffersEXT);
-			LOAD_EXTENSION_FUNCTION(PFNGLBINDFRAMEBUFFEREXTPROC,
-					glBindFramebufferEXT);
-			LOAD_EXTENSION_FUNCTION(PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC,
-					glCheckFramebufferStatusEXT);
-			LOAD_EXTENSION_FUNCTION(PFNGLFRAMEBUFFERTEXTURE2DEXTPROC,
-					glFramebufferTexture2DEXT);
-
-		} else {
-			break;
-		}
-
-		if (glfwExtensionSupported("GL_ARB_vertex_buffer_object") != GL_FALSE) {
-			LOAD_EXTENSION_FUNCTION(PFNGLGENBUFFERSARBPROC, glGenBuffersARB);
-			LOAD_EXTENSION_FUNCTION(PFNGLBINDBUFFERARBPROC, glBindBufferARB);
-			LOAD_EXTENSION_FUNCTION(PFNGLBUFFERDATAARBPROC, glBufferDataARB);
-			LOAD_EXTENSION_FUNCTION(PFNGLBUFFERSUBDATAARBPROC,
-					glBufferSubDataARB);
-			LOAD_EXTENSION_FUNCTION(PFNGLDELETEBUFFERSARBPROC,
-					glDeleteBuffersARB);
-		} else {
-			break;
-		}
-		bRet = true;
-	} while (0);
-	return bRet;
+bool initExtensions()
+{
+    // Do nothing, on Linux we use GLEW.
 }
 
 NS_CC_BEGIN
 
-CCEGLView::CCEGLView()
-: bIsInit(false)
-, m_fFrameZoomFactor(1.0f)
+EGLView::EGLView()
+: _wasInit(false)
+, _frameZoomFactor(1.0f)
+,_window(nullptr)
+,_context(nullptr)
 {
 }
 
-CCEGLView::~CCEGLView()
+EGLView::~EGLView()
 {
 }
 
-void keyEventHandle(int iKeyID,int iKeyState) {
-	if (iKeyState ==GLFW_RELEASE) {
-		return;
-	}
-
-	if (iKeyID == GLFW_KEY_DEL) {
-		CCIMEDispatcher::sharedDispatcher()->dispatchDeleteBackward();
-	} else if (iKeyID == GLFW_KEY_ENTER) {
-		CCIMEDispatcher::sharedDispatcher()->dispatchInsertText("\n", 1);
-	} else if (iKeyID == GLFW_KEY_TAB) {
-
-	}
-}
-
-void charEventHandle(int iCharID,int iCharState) {
-	if (iCharState ==GLFW_RELEASE) {
-		return;
-	}
-
-	// ascii char
-	CCIMEDispatcher::sharedDispatcher()->dispatchInsertText((const char *)&iCharID, 1);
-}
-
-void mouseButtonEventHandle(int iMouseID,int iMouseState) {
-	if (iMouseID == GLFW_MOUSE_BUTTON_LEFT) {
-        CCEGLView* pEGLView = CCEGLView::sharedOpenGLView();
-		//get current mouse pos
-		int x,y;
-		glfwGetMousePos(&x, &y);
-		CCPoint oPoint((float)x,(float)y);
-		/*
-		if (!CCRect::CCRectContainsPoint(s_pMainWindow->m_rcViewPort,oPoint))
-		{
-			CCLOG("not in the viewport");
-			return;
-		}
-		*/
-         oPoint.x /= pEGLView->m_fFrameZoomFactor;
-         oPoint.y /= pEGLView->m_fFrameZoomFactor;
-		int id = 0;
-		if (iMouseState == GLFW_PRESS) {
-			pEGLView->handleTouchesBegin(1, &id, &oPoint.x, &oPoint.y);
-
-		} else if (iMouseState == GLFW_RELEASE) {
-			pEGLView->handleTouchesEnd(1, &id, &oPoint.x, &oPoint.y);
-		}
-	}
-}
-
-void mousePosEventHandle(int iPosX,int iPosY) {
-	int iButtonState = glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT);
-
-	//to test move
-	if (iButtonState == GLFW_PRESS) {
-            CCEGLView* pEGLView = CCEGLView::sharedOpenGLView();
-            int id = 0;
-            float x = (float)iPosX;
-            float y = (float)iPosY;
-            x /= pEGLView->m_fFrameZoomFactor;
-            y /= pEGLView->m_fFrameZoomFactor;
-            pEGLView->handleTouchesMove(1, &id, &x, &y);
-	}
-}
-
-int closeEventHandle() {
-	CCDirector::sharedDirector()->end();
-	return GL_TRUE;
-}
-
-void CCEGLView::setFrameSize(float width, float height)
+static std::string getApplicationName()
 {
-	bool eResult = false;
-	int u32GLFWFlags = GLFW_WINDOW;
-	//create the window by glfw.
+    char fullpath[256] = {0};
+    ssize_t length = readlink("/proc/self/exe", fullpath, sizeof(fullpath)-1);
 
-	//check
-	CCAssert(width!=0&&height!=0, "invalid window's size equal 0");
+    if (length <= 0) {
+        return "Cocos2dx-Linux";
+    }
 
-	//Inits GLFW
-	eResult = glfwInit() != GL_FALSE;
-
-	if (!eResult) {
-		CCAssert(0, "fail to init the glfw");
-	}
-
-	/* Updates window hint */
-	glfwOpenWindowHint(GLFW_WINDOW_NO_RESIZE, GL_TRUE);
-
-	int iDepth = 16; // set default value
-	/* Depending on video depth */
-	switch(iDepth)
-	{
-		/* 16-bit */
-		case 16:
-		{
-			/* Updates video mode */
-			eResult = (glfwOpenWindow(width, height, 5, 6, 5, 0, 16, 8, (int)u32GLFWFlags) != false) ? true : false;
-
-			break;
-		}
-
-		/* 24-bit */
-		case 24:
-		{
-			/* Updates video mode */
-			eResult = (glfwOpenWindow(width, height, 8, 8, 8, 0, 16, 8, (int)u32GLFWFlags) != false) ? true : false;
-
-			break;
-		}
-
-		/* 32-bit */
-		default:
-		case 32:
-		{
-			/* Updates video mode */
-			eResult = (glfwOpenWindow(width, height, 8, 8, 8, 8, 16, 8, (int)u32GLFWFlags) != GL_FALSE) ? true :false;
-			break;
-		}
-	}
-
-	/* Success? */
-	if(eResult)
-	{
-
-		/* Updates actual size */
-	  //		glfwGetWindowSize(&width, &height);
-
-		CCEGLViewProtocol::setFrameSize(width, height);		
-
-		/* Updates its title */
-		glfwSetWindowTitle("Cocos2dx-Linux");
-
-		//set the init flag
-		bIsInit = true;
-
-		//register the glfw key event
-		glfwSetKeyCallback(keyEventHandle);
-		//register the glfw char event
-		glfwSetCharCallback(charEventHandle);
-		//register the glfw mouse event
-		glfwSetMouseButtonCallback(mouseButtonEventHandle);
-		//register the glfw mouse pos event
-		glfwSetMousePosCallback(mousePosEventHandle);
-
-		glfwSetWindowCloseCallback(closeEventHandle);
-
-		//Inits extensions
-		eResult = initExtensions();
-
-		if (!eResult) {
-			CCAssert(0, "fail to init the extensions of opengl");
-		}
-		initGL();
-	}
+    fullpath[length] = '\0';
+    const std::string appPath = fullpath;
+    return appPath.substr(appPath.find_last_of('/') + 1);
 }
 
-void CCEGLView::setFrameZoomFactor(float fZoomFactor)
+void checkSDLError(int line)
 {
-    m_fFrameZoomFactor = fZoomFactor;
-    glfwSetWindowSize(m_obScreenSize.width * fZoomFactor, m_obScreenSize.height * fZoomFactor);
-    CCDirector::sharedDirector()->setProjection(CCDirector::sharedDirector()->getProjection());
+#if COCOS2D_DEBUG > 0
+    const char *error = SDL_GetError();
+    if (*error != '\0')
+    {
+        if (line != -1)
+            CCLOG("SDL Error: %s, line: %i", error, line);
+        else
+            CCLOG("SDL Error: %s", error);
+        SDL_ClearError();
+    }
+#endif
 }
 
-float CCEGLView::getFrameZoomFactor()
+void EGLView::setFrameSize(float width, float height)
 {
-    return m_fFrameZoomFactor;
+    bool eResult = false;
+    //create the window by SDL2.
+
+    //check
+    CCAssert(width!=0&&height!=0, "invalid window's size equal 0");
+
+    //Inits SDL2
+    eResult = SDL_Init(SDL_INIT_VIDEO) == 0;
+    if (!eResult) {
+        CCAssert(0, "fail to init the SDL");
+    }
+
+    const std::string appName = getApplicationName();
+    const int iDepth = 16; // set default value
+
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+
+    _window = SDL_CreateWindow(appName.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                          width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, iDepth);
+    checkSDLError(__LINE__);
+
+    _context = SDL_GL_CreateContext(_window);
+
+    if (!_window || !_context) {
+        CCAssert(0, "Failed to initialize OpenGL context");
+    } else {
+        SDL_GL_SetSwapInterval(1);
+        checkSDLError(__LINE__);
+        _wasInit = true;
+
+        EGLViewProtocol::setFrameSize(width, height);
+        initGL();
+        if (!GLEW_ARB_framebuffer_object)
+            CCAssert(0, "fail to init OpenGL extension ARB_framebuffer_object");
+        if (!GLEW_ARB_vertex_buffer_object)
+            CCAssert(0, "fail to init OpenGL extension ARB_vertex_buffer_object");
+    }
 }
 
-void CCEGLView::setViewPortInPoints(float x , float y , float w , float h)
+void EGLView::setFrameZoomFactor(float fZoomFactor)
 {
-    glViewport((GLint)(x * m_fScaleX * m_fFrameZoomFactor+ m_obViewPortRect.origin.x * m_fFrameZoomFactor),
-        (GLint)(y * m_fScaleY * m_fFrameZoomFactor + m_obViewPortRect.origin.y * m_fFrameZoomFactor),
-        (GLsizei)(w * m_fScaleX * m_fFrameZoomFactor),
-        (GLsizei)(h * m_fScaleY * m_fFrameZoomFactor));
+    _frameZoomFactor = fZoomFactor;
+    SDL_SetWindowSize(_window, _screenSize.width * fZoomFactor, _screenSize.height * fZoomFactor);
+    Director::getInstance()->setProjection(Director::getInstance()->getProjection());
 }
 
-void CCEGLView::setScissorInPoints(float x , float y , float w , float h)
+float EGLView::getFrameZoomFactor()
 {
-    glScissor((GLint)(x * m_fScaleX * m_fFrameZoomFactor + m_obViewPortRect.origin.x * m_fFrameZoomFactor),
-              (GLint)(y * m_fScaleY * m_fFrameZoomFactor + m_obViewPortRect.origin.y * m_fFrameZoomFactor),
-              (GLsizei)(w * m_fScaleX * m_fFrameZoomFactor),
-              (GLsizei)(h * m_fScaleY * m_fFrameZoomFactor));
+    return _frameZoomFactor;
 }
 
-
-bool CCEGLView::isOpenGLReady()
+void EGLView::setViewPortInPoints(float x , float y , float w , float h)
 {
-	return bIsInit;
+    glViewport((GLint)(x * _scaleX * _frameZoomFactor+ _viewPortRect.origin.x * _frameZoomFactor),
+        (GLint)(y * _scaleY * _frameZoomFactor + _viewPortRect.origin.y * _frameZoomFactor),
+        (GLsizei)(w * _scaleX * _frameZoomFactor),
+        (GLsizei)(h * _scaleY * _frameZoomFactor));
 }
 
-void CCEGLView::end()
+void EGLView::setScissorInPoints(float x , float y , float w , float h)
 {
-	/* Exits from GLFW */
-	glfwTerminate();
-	delete this;
-	exit(0);
+    glScissor((GLint)(x * _scaleX * _frameZoomFactor + _viewPortRect.origin.x * _frameZoomFactor),
+              (GLint)(y * _scaleY * _frameZoomFactor + _viewPortRect.origin.y * _frameZoomFactor),
+              (GLsizei)(w * _scaleX * _frameZoomFactor),
+              (GLsizei)(h * _scaleY * _frameZoomFactor));
 }
 
-void CCEGLView::swapBuffers() {
-	if (bIsInit) {
-		/* Swap buffers */
-		glfwSwapBuffers();
-	}
+
+bool EGLView::isOpenGLReady()
+{
+    return _wasInit;
 }
 
-void CCEGLView::setIMEKeyboardState(bool bOpen) {
+void EGLView::end()
+{
+    SDL_GL_DeleteContext(_context);
+    SDL_DestroyWindow(_window);
+    SDL_Quit();
 
+    delete this;
+    exit(0);
 }
 
-bool CCEGLView::initGL()
+void EGLView::swapBuffers() {
+    if (_wasInit) {
+        /* Swap buffers */
+        SDL_GL_SwapWindow(_window);
+    }
+}
+
+// Polls events if SDL backend is on.
+// Note that finger events allow multi-touch on Linux, but libsdl with X11
+// backend does not support multitouch. However multitouch should work
+// out of the box on upcoming Weston and Mir display servers.
+// Also supports mouse touches emulation, keyboard events, text events.
+void EGLView::pollInputEvents()
+{
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+        case SDL_QUIT:
+            Director::sharedDirector()->end();
+            break;
+        case SDL_MOUSEBUTTONDOWN:
+            if (event.button.button == SDL_BUTTON_LEFT) {
+                int id = event.button.which;
+                _pressedMouseInstances.insert(id);
+                Point oPoint((float)event.button.x, (float)event.button.y);
+                oPoint.x /= _frameZoomFactor;
+                oPoint.y /= _frameZoomFactor;
+                handleTouchesBegin(1, &id, &oPoint.x, &oPoint.y);
+            }
+            break;
+        case SDL_MOUSEBUTTONUP:
+            if (event.button.button == SDL_BUTTON_LEFT) {
+                int id = event.button.which;
+                _pressedMouseInstances.erase(id);
+                Point oPoint((float)event.button.x, (float)event.button.y);
+                oPoint.x /= _frameZoomFactor;
+                oPoint.y /= _frameZoomFactor;
+                handleTouchesEnd(1, &id, &oPoint.x, &oPoint.y);
+            }
+            break;
+        case SDL_MOUSEMOTION:
+            if (_pressedMouseInstances.count(event.motion.which)) {
+                int id = event.motion.which;
+                Point oPoint((float)event.motion.x, (float)event.motion.y);
+                oPoint.x /= _frameZoomFactor;
+                oPoint.y /= _frameZoomFactor;
+                handleTouchesMove(1, &id, &oPoint.x, &oPoint.y);
+            }
+            break;
+        case SDL_FINGERDOWN: {
+            int fingerId = event.tfinger.fingerId;
+            Point oPoint((float)event.tfinger.x, (float)event.tfinger.y);
+            oPoint.x /= _frameZoomFactor;
+            oPoint.y /= _frameZoomFactor;
+            handleTouchesBegin(1, &fingerId, &oPoint.x, &oPoint.y);
+        }
+            break;
+        case SDL_FINGERUP: {
+            int fingerId = event.tfinger.fingerId;
+            Point oPoint((float)event.tfinger.x, (float)event.tfinger.y);
+            oPoint.x /= _frameZoomFactor;
+            oPoint.y /= _frameZoomFactor;
+            handleTouchesEnd(1, &fingerId, &oPoint.x, &oPoint.y);
+            break;
+        }
+        case SDL_FINGERMOTION: {
+            int fingerId = event.tfinger.fingerId;
+            Point oPoint((float)event.tfinger.x, (float)event.tfinger.y);
+            oPoint.x /= _frameZoomFactor;
+            oPoint.y /= _frameZoomFactor;
+            handleTouchesMove(1, &fingerId, &oPoint.x, &oPoint.y);
+        }
+            break;
+        case SDL_TEXTINPUT: {
+            const std::string text = event.text.text;
+            IMEDispatcher::sharedDispatcher()->dispatchInsertText(text.c_str(), text.size());
+        }
+            break;
+        case SDL_TEXTEDITING:
+            // TODO: not implemented.
+            // In SDL text editing is similar to patching. Each patch consists of
+            // selected text range and string that replaces selected text.
+            break;
+        case SDL_KEYDOWN: {
+            if (event.key.keysym.sym == SDLK_BACKSPACE)
+                IMEDispatcher::sharedDispatcher()->dispatchDeleteBackward();
+            Director::sharedDirector()->getKeyboardDispatcher()->dispatchKeyboardEvent(event.key.keysym.sym, true);
+            break;
+        case SDL_KEYUP:
+            Director::sharedDirector()->getKeyboardDispatcher()->dispatchKeyboardEvent(event.key.keysym.sym, false);
+            }
+            break;
+        }
+    }
+}
+
+void EGLView::setIMEKeyboardState(bool bOpen)
+{
+    _IMEKeyboardOpened = bOpen;
+    Rect zeroRect(0, 0, 0, 0);
+    IMEKeyboardNotificationInfo info;
+    info.begin = zeroRect;
+    info.end = zeroRect;
+    info.duration = 0;
+    if (bOpen) {
+        IMEDispatcher::sharedDispatcher()->dispatchKeyboardWillShow(info);
+        IMEDispatcher::sharedDispatcher()->dispatchKeyboardDidShow(info);
+    } else {
+        IMEDispatcher::sharedDispatcher()->dispatchKeyboardWillHide(info);
+        IMEDispatcher::sharedDispatcher()->dispatchKeyboardDidHide(info);
+    }
+}
+
+bool EGLView::initGL()
 {
     GLenum GlewInitResult = glewInit();
     if (GLEW_OK != GlewInitResult) 
@@ -305,20 +275,20 @@ bool CCEGLView::initGL()
 
     if (GLEW_ARB_vertex_shader && GLEW_ARB_fragment_shader)
     {
-        CCLog("Ready for GLSL");
+        log("Ready for GLSL");
     }
     else 
     {
-        CCLog("Not totally ready :(");
+        log("Not totally ready :(");
     }
 
     if (glewIsSupported("GL_VERSION_2_0"))
     {
-        CCLog("Ready for OpenGL 2.0");
+        log("Ready for OpenGL 2.0");
     }
     else
     {
-        CCLog("OpenGL 2.0 not supported");
+        log("OpenGL 2.0 not supported");
     }
 
     // Enable point size by default on linux.
@@ -327,26 +297,24 @@ bool CCEGLView::initGL()
     return true;
 }
 
-void CCEGLView::destroyGL()
+void EGLView::destroyGL()
 {
-	/*
-    if (m_hDC != NULL && m_hRC != NULL)
-    {
-        // deselect rendering context and delete it
-        wglMakeCurrent(m_hDC, NULL);
-        wglDeleteContext(m_hRC);
-    }
-	*/
 }
 
-CCEGLView* CCEGLView::sharedOpenGLView()
+EGLView* EGLView::getInstance()
 {
-    static CCEGLView* s_pEglView = NULL;
+    static EGLView* s_pEglView = NULL;
     if (s_pEglView == NULL)
     {
-        s_pEglView = new CCEGLView();
+        s_pEglView = new EGLView();
     }
     return s_pEglView;
+}
+
+// XXX: deprecated
+EGLView* EGLView::sharedOpenGLView()
+{
+    return EGLView::getInstance();
 }
 
 NS_CC_END

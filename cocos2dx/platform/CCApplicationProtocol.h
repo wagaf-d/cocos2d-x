@@ -3,53 +3,54 @@
 
 NS_CC_BEGIN
 
-enum TargetPlatform
-{
-    kTargetWindows,
-    kTargetLinux,
-    kTargetMacOS,
-    kTargetAndroid,
-    kTargetIphone,
-    kTargetIpad,
-    kTargetBlackBerry,
-    kTargetNaCl,
-    kTargetEmscripten,
-    kTargetTizen
-};
-
 /**
  * @addtogroup platform
  * @{
  */
 
-class CC_DLL CCApplicationProtocol
+class CC_DLL ApplicationProtocol
 {
 public:
 
-    virtual ~CCApplicationProtocol() {}
+    // Since WINDOWS and ANDROID are defined as macros, we could not just use these keywords in enumeration(Platform).
+    // Therefore, 'OS_' prefix is added to avoid conflicts with the definitions of system macros.
+    enum class Platform
+    {
+        OS_WINDOWS,
+        OS_LINUX,
+        OS_MAC,
+        OS_ANDROID,
+        OS_IPHONE,
+        OS_IPAD,
+        OS_BLACKBERRY,
+        OS_NACL,
+        OS_EMSCRIPTEN,
+        OS_TIZEN
+    };
+
+
+    virtual ~ApplicationProtocol() {}
 
     /**
-    @brief    Implement CCDirector and CCScene init code here.
+    @brief    Implement Director and Scene init code here.
     @return true    Initialize success, app continue.
     @return false   Initialize failed, app terminate.
     */
     virtual bool applicationDidFinishLaunching() = 0;
 
     /**
-    @brief  The function be called when the application enter background
-    @param  the pointer of the application
+    @brief  This function will be called when the application enters background.
     */
     virtual void applicationDidEnterBackground() = 0;
 
     /**
-    @brief  The function be called when the application enter foreground
-    @param  the pointer of the application
+    @brief  This function will be called when the application enters foreground.
     */
     virtual void applicationWillEnterForeground() = 0;
 
     /**
-    @brief    Callback by CCDirector for limit FPS.
-    @interval       The time, expressed in seconds, between current frame and next. 
+    @brief    Callback by Director for limit FPS.
+    @param interval The time, expressed in seconds, between current frame and next.
     */
     virtual void setAnimationInterval(double interval) = 0;
 
@@ -57,12 +58,12 @@ public:
     @brief Get current language config
     @return Current language config
     */
-    virtual ccLanguageType getCurrentLanguage() = 0;
+    virtual LanguageType getCurrentLanguage() = 0;
     
     /**
      @brief Get target platform
      */
-    virtual TargetPlatform getTargetPlatform() = 0;
+    virtual Platform getTargetPlatform() = 0;
 };
 
 // end of platform group

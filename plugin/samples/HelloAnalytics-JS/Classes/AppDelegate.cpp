@@ -12,8 +12,6 @@
 #include "jsb_opengl_registration.h"
 
 #include "jsb_pluginx_protocols_auto.hpp"
-#include "jsb_pluginx_flurry_auto.hpp"
-#include "jsb_pluginx_umeng_auto.hpp"
 #include "jsb_pluginx_extension_registration.h"
 
 USING_NS_CC;
@@ -25,14 +23,14 @@ AppDelegate::AppDelegate()
 
 AppDelegate::~AppDelegate()
 {
-    CCScriptEngineManager::sharedManager()->purgeSharedManager();
+    ScriptEngineManager::destroyInstance();
 }
 
 bool AppDelegate::applicationDidFinishLaunching()
 {
     // initialize director
-    CCDirector *pDirector = CCDirector::sharedDirector();
-    pDirector->setOpenGLView(CCEGLView::sharedOpenGLView());
+    Director *pDirector = Director::getInstance();
+    pDirector->setOpenGLView(EGLView::getInstance());
     
     // turn on display FPS
     pDirector->setDisplayStats(true);
@@ -49,13 +47,11 @@ bool AppDelegate::applicationDidFinishLaunching()
     sc->addRegisterCallback(JSB_register_opengl);
 
     sc->addRegisterCallback(register_all_pluginx_protocols);
-    sc->addRegisterCallback(register_all_pluginx_umeng);
-    sc->addRegisterCallback(register_all_pluginx_flurry);
     sc->addRegisterCallback(register_pluginx_js_extensions);
     sc->start();
     CCLOG("applicationDidFinishLaunching 02");
-    CCScriptEngineProtocol *pEngine = ScriptingCore::getInstance();
-    CCScriptEngineManager::sharedManager()->setScriptEngine(pEngine);
+    ScriptEngineProtocol *pEngine = ScriptingCore::getInstance();
+    ScriptEngineManager::getInstance()->setScriptEngine(pEngine);
     ScriptingCore::getInstance()->runScript("main.js");
        CCLOG("applicationDidFinishLaunching 03");
     return true;
@@ -64,9 +60,9 @@ bool AppDelegate::applicationDidFinishLaunching()
 // This function will be called when the app is inactive. When comes a phone call,it's be invoked too
 void AppDelegate::applicationDidEnterBackground()
 {
-    CCDirector::sharedDirector()->stopAnimation();
-    SimpleAudioEngine::sharedEngine()->pauseBackgroundMusic();
-    SimpleAudioEngine::sharedEngine()->pauseAllEffects();
+    Director::getInstance()->stopAnimation();
+    SimpleAudioEngine::getInstance()->pauseBackgroundMusic();
+    SimpleAudioEngine::getInstance()->pauseAllEffects();
 
     ScriptingCore* sc = ScriptingCore::getInstance();
     jsval nsval;
@@ -79,9 +75,9 @@ void AppDelegate::applicationDidEnterBackground()
 // this function will be called when the app is active again
 void AppDelegate::applicationWillEnterForeground()
 {
-    CCDirector::sharedDirector()->startAnimation();
-    SimpleAudioEngine::sharedEngine()->resumeBackgroundMusic();
-    SimpleAudioEngine::sharedEngine()->resumeAllEffects();
+    Director::getInstance()->startAnimation();
+    SimpleAudioEngine::getInstance()->resumeBackgroundMusic();
+    SimpleAudioEngine::getInstance()->resumeAllEffects();
 
     ScriptingCore* sc = ScriptingCore::getInstance();
     jsval nsval;

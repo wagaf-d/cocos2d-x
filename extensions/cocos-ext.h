@@ -39,6 +39,8 @@
 #include "network/HttpRequest.h"
 #include "network/HttpResponse.h"
 #include "network/HttpClient.h"
+#include "network/WebSocket.h"
+#include "network/SocketIO.h"
 
 // Physics integration
 #if CC_ENABLE_CHIPMUNK_INTEGRATION || CC_ENABLE_BOX2D_INTEGRATION
@@ -47,5 +49,11 @@
 #endif
 
 #include "spine/spine-cocos2dx.h"
+
+#include "Components/CCComAttribute.h"
+#include "Components/CCComAudio.h"
+#include "Components/CCComController.h"
+
+#include "CCDeprecated-ext.h"
 
 #endif /* __COCOS2D_EXT_H__ */

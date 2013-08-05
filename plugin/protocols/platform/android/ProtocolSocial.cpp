@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2012-2013 cocos2d-x.org
+Copyright (c) 2013 cocos2d-x.org
 
 http://www.cocos2d-x.org
 
@@ -27,67 +27,58 @@ THE SOFTWARE.
 #include "PluginUtils.h"
 #include "PluginJavaData.h"
 
-#if 1
-#define  LOG_TAG    "ProtocolSocial"
-#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
-#else
-#define  LOGD(...) 
-#endif
-
 namespace cocos2d { namespace plugin {
 
 extern "C" {
-	JNIEXPORT void JNICALL Java_org_cocos2dx_plugin_InterfaceSocial_nativeOnShareResult(JNIEnv*  env, jobject thiz, jstring className, jint ret, jstring msg)
-	{
-		std::string strMsg = PluginJniHelper::jstring2string(msg);
-		std::string strClassName = PluginJniHelper::jstring2string(className);
-		PluginProtocol* pPlugin = PluginUtils::getPluginPtr(strClassName);
-		LOGD("nativeOnShareResult(), Get plugin ptr : %p", pPlugin);
-		if (pPlugin != NULL)
-		{
-			LOGD("nativeOnShareResult(), Get plugin name : %s", pPlugin->getPluginName());
-			ProtocolSocial* pSocial = dynamic_cast<ProtocolSocial*>(pPlugin);
-			if (pSocial != NULL)
-			{
-				pSocial->onShareResult((ShareResultCode) ret, strMsg.c_str());
-			}
-		}
-	}
+    JNIEXPORT void JNICALL Java_org_cocos2dx_plugin_SocialWrapper_nativeOnSocialResult(JNIEnv*  env, jobject thiz, jstring className, jint ret, jstring msg)
+    {
+        std::string strMsg = PluginJniHelper::jstring2string(msg);
+        std::string strClassName = PluginJniHelper::jstring2string(className);
+        PluginProtocol* pPlugin = PluginUtils::getPluginPtr(strClassName);
+        PluginUtils::outputLog("ProtocolSocial", "nativeOnSocialResult(), Get plugin ptr : %p", pPlugin);
+        if (pPlugin != NULL)
+        {
+            PluginUtils::outputLog("ProtocolSocial", "nativeOnSocialResult(), Get plugin name : %s", pPlugin->getPluginName());
+            ProtocolSocial* pSocial = dynamic_cast<ProtocolSocial*>(pPlugin);
+            if (pSocial != NULL)
+            {
+                SocialListener* pListener = pSocial->getListener();
+                if (NULL != pListener)
+                {
+                    pListener->onSocialResult((SocialRetCode) ret, strMsg.c_str());
+                }
+            }
+        }
+    }
 }
 
 ProtocolSocial::ProtocolSocial()
-: m_pListener(NULL)
+: _listener(NULL)
 {
 }
 
 ProtocolSocial::~ProtocolSocial()
 {
-    PluginUtils::erasePluginJavaData(this);
-}
-
-bool ProtocolSocial::init()
-{
-    return true;
 }
 
 void ProtocolSocial::configDeveloperInfo(TSocialDeveloperInfo devInfo)
 {
     if (devInfo.empty())
     {
-        LOGD("The developer info is empty!");
+        PluginUtils::outputLog("ProtocolSocial", "The developer info is empty!");
         return;
     }
     else
     {
         PluginJavaData* pData = PluginUtils::getPluginJavaData(this);
-    	PluginJniMethodInfo t;
+        PluginJniMethodInfo t;
         if (PluginJniHelper::getMethodInfo(t
-    		, pData->jclassName.c_str()
-    		, "configDeveloperInfo"
-    		, "(Ljava/util/Hashtable;)V"))
-    	{
-        	// generate the hashtable from map
-        	jobject obj_Map = PluginUtils::createJavaMapObject(t, &devInfo);
+            , pData->jclassName.c_str()
+            , "configDeveloperInfo"
+            , "(Ljava/util/Hashtable;)V"))
+        {
+            // generate the hashtable from map
+            jobject obj_Map = PluginUtils::createJavaMapObject(&devInfo);
 
             // invoke java method
             t.env->CallVoidMethod(pData->jobj, t.methodID, obj_Map);
@@ -97,75 +88,72 @@ void ProtocolSocial::configDeveloperInfo(TSocialDeveloperInfo devInfo)
     }
 }
 
-void ProtocolSocial::share(TShareInfo info)
+void ProtocolSocial::submitScore(const char* leadboardID, long score)
 {
-    if (info.empty())
+    PluginJavaData* pData = PluginUtils::getPluginJavaData(this);
+    PluginJniMethodInfo t;
+    if (PluginJniHelper::getMethodInfo(t
+        , pData->jclassName.c_str()
+        , "submitScore"
+        , "(Ljava/lang/String;J)V"))
     {
-        if (NULL != m_pListener)
-        {
-            onShareResult(kShareFail, "Share info error");
-        }
-        LOGD("The Share info is empty!");
+        jstring strID = PluginUtils::getEnv()->NewStringUTF(leadboardID);
+
+        // invoke java method
+        t.env->CallVoidMethod(pData->jobj, t.methodID, strID, score);
+        t.env->DeleteLocalRef(strID);
+        t.env->DeleteLocalRef(t.classID);
+    }
+}
+
+void ProtocolSocial::showLeaderboard(const char* leaderboardID)
+{
+    PluginJavaData* pData = PluginUtils::getPluginJavaData(this);
+    PluginJniMethodInfo t;
+    if (PluginJniHelper::getMethodInfo(t
+        , pData->jclassName.c_str()
+        , "showLeaderboard"
+        , "(Ljava/lang/String;)V"))
+    {
+        jstring strID = PluginUtils::getEnv()->NewStringUTF(leaderboardID);
+
+        // invoke java method
+        t.env->CallVoidMethod(pData->jobj, t.methodID, strID);
+        t.env->DeleteLocalRef(strID);
+        t.env->DeleteLocalRef(t.classID);
+    }
+}
+
+void ProtocolSocial::unlockAchievement(TAchievementInfo achInfo)
+{
+    if (achInfo.empty())
+    {
+        PluginUtils::outputLog("ProtocolSocial", "The achievement info is empty!");
         return;
     }
     else
     {
         PluginJavaData* pData = PluginUtils::getPluginJavaData(this);
-		PluginJniMethodInfo t;
-		if (PluginJniHelper::getMethodInfo(t
-			, pData->jclassName.c_str()
-			, "share"
-			, "(Ljava/util/Hashtable;)V"))
-		{
-			// generate the hashtable from map
-			jobject obj_Map = PluginUtils::createJavaMapObject(t, &info);
+        PluginJniMethodInfo t;
+        if (PluginJniHelper::getMethodInfo(t
+            , pData->jclassName.c_str()
+            , "unlockAchievement"
+            , "(Ljava/util/Hashtable;)V"))
+        {
+            // generate the hashtable from map
+            jobject obj_Map = PluginUtils::createJavaMapObject(&achInfo);
 
-			// invoke java method
-			t.env->CallVoidMethod(pData->jobj, t.methodID, obj_Map);
-			t.env->DeleteLocalRef(obj_Map);
-			t.env->DeleteLocalRef(t.classID);
-		}
+            // invoke java method
+            t.env->CallVoidMethod(pData->jobj, t.methodID, obj_Map);
+            t.env->DeleteLocalRef(obj_Map);
+            t.env->DeleteLocalRef(t.classID);
+        }
     }
 }
 
-void ProtocolSocial::setResultListener(ShareResultListener* pListener)
+void ProtocolSocial::showAchievements()
 {
-	m_pListener = pListener;
-}
-
-void ProtocolSocial::onShareResult(ShareResultCode ret, const char* msg)
-{
-    if (m_pListener)
-    {
-    	m_pListener->onShareResult(ret, msg);
-    }
-    else
-    {
-        LOGD("Result listener is null!");
-    }
-    LOGD("Share result is : %d(%s)", (int) ret, msg);
-}
-
-const char* ProtocolSocial::getSDKVersion()
-{
-	std::string verName;
-
-	PluginJavaData* pData = PluginUtils::getPluginJavaData(this);
-	PluginJniMethodInfo t;
-	if (PluginJniHelper::getMethodInfo(t
-		, pData->jclassName.c_str()
-		, "getSDKVersion"
-		, "()Ljava/lang/String;"))
-	{
-		jstring ret = (jstring)(t.env->CallObjectMethod(pData->jobj, t.methodID));
-		verName = PluginJniHelper::jstring2string(ret);
-	}
-	return verName.c_str();
-}
-
-void ProtocolSocial::setDebugMode(bool debug)
-{
-	PluginUtils::callJavaFunctionWithName_oneBaseType(this, "setDebugMode", "(Z)V", debug);
+    PluginUtils::callJavaFunctionWithName(this, "showAchievements");
 }
 
 }} // namespace cocos2d { namespace plugin {

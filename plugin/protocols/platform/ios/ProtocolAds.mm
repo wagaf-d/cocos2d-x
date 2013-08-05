@@ -23,12 +23,13 @@
  ****************************************************************************/
 
 #include "ProtocolAds.h"
+#include "PluginUtilsIOS.h"
 #import "InterfaceAds.h"
 
 namespace cocos2d { namespace plugin {
 
 ProtocolAds::ProtocolAds()
-: m_pListener(NULL)
+: _listener(NULL)
 {
 }
 
@@ -36,56 +37,68 @@ ProtocolAds::~ProtocolAds()
 {
 }
 
-bool ProtocolAds::init()
-{
-    return true;
-}
-
 void ProtocolAds::configDeveloperInfo(TAdsDeveloperInfo devInfo)
 {
+    if (devInfo.empty())
+    {
+        PluginUtilsIOS::outputLog("The developer info is empty for %s!", this->getPluginName());
+        return;
+    }
+    else
+    {
+        PluginOCData* pData = PluginUtilsIOS::getPluginOCData(this);
+        assert(pData != NULL);
+        
+        id ocObj = pData->obj;
+        if ([ocObj conformsToProtocol:@protocol(InterfaceAds)]) {
+            NSObject<InterfaceAds>* curObj = ocObj;
+            NSMutableDictionary* dict = PluginUtilsIOS::createDictFromMap(&devInfo);
+            [curObj configDeveloperInfo:dict];
+        }
+    }
 }
 
-void ProtocolAds::showAds(AdsType type, int sizeEnum, AdsPos pos)
+void ProtocolAds::showAds(TAdsInfo info, AdsPos pos)
 {
+    PluginOCData* pData = PluginUtilsIOS::getPluginOCData(this);
+    assert(pData != NULL);
+
+    id ocObj = pData->obj;
+    if ([ocObj conformsToProtocol:@protocol(InterfaceAds)]) {
+        NSObject<InterfaceAds>* curObj = ocObj;
+        NSMutableDictionary* dict = PluginUtilsIOS::createDictFromMap(&info);
+        [curObj showAds:dict position:pos];
+    }
 }
 
-void ProtocolAds::hideAds(AdsType type)
+void ProtocolAds::hideAds(TAdsInfo info)
 {
+    PluginOCData* pData = PluginUtilsIOS::getPluginOCData(this);
+    assert(pData != NULL);
+    
+    id ocObj = pData->obj;
+    if ([ocObj conformsToProtocol:@protocol(InterfaceAds)]) {
+        NSObject<InterfaceAds>* curObj = ocObj;
+        NSMutableDictionary* dict = PluginUtilsIOS::createDictFromMap(&info);
+        [curObj hideAds:dict];
+    }
+}
+
+void ProtocolAds::queryPoints()
+{
+    PluginUtilsIOS::callOCFunctionWithName(this, "queryPoints");
 }
 
 void ProtocolAds::spendPoints(int points)
 {
-}
-
-void ProtocolAds::setDebugMode(bool debug)
-{
-}
-
-// For the callbak methods
-void ProtocolAds::setAdsListener(AdsListener* pListener)
-{
-    m_pListener = pListener;
-}
-
-void ProtocolAds::onAdsResult(AdsResultCode code, const char* msg)
-{
-    if (m_pListener != NULL)
-    {
-        m_pListener->onAdsResult(code, msg);
+    PluginOCData* pData = PluginUtilsIOS::getPluginOCData(this);
+    assert(pData != NULL);
+    
+    id ocObj = pData->obj;
+    if ([ocObj conformsToProtocol:@protocol(InterfaceAds)]) {
+        NSObject<InterfaceAds>* curObj = ocObj;
+        [curObj spendPoints:points];
     }
-}
-
-void ProtocolAds::onPlayerGetPoints(int points)
-{
-    if (m_pListener != NULL)
-    {
-        m_pListener->onPlayerGetPoints(this, points);
-    }
-}
-
-const char* ProtocolAds::getSDKVersion()
-{
-    return "Subclass should override this interface";
 }
 
 }} //namespace cocos2d { namespace plugin {
